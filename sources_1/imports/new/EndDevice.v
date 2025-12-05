@@ -93,7 +93,7 @@ module TX_Unit #(
         .shift_out(tx_shift_out_bit)
     );
 
-    assign tx_bit = tx_shift_en ? tx_shift_out_bit : 1'bz; // 전송 중이 아닐 때는 하이 임피던스(z) 상태로 전환
+    assign tx_bit = tx_shift_en ? tx_shift_out_bit : 1'b1; // 전송 중이 아닐 때는 하이 임피던스(z) 상태로 전환
 endmodule
 
 //================================================================
@@ -159,14 +159,14 @@ module RX_Unit #(
                     end else begin
                         rx_state <= RX_DONE;
                         rx_shift_en <= 0; // 시프트 완료
+                        if (MAC_ADDRESS == BROADCAST_ADDR || dest_addr == MAC_ADDRESS || dest_addr == BROADCAST_ADDR) begin // assign으로 연결된 wire 사용
+                            rx_frame <= rx_shift_reg_out; // 내 주소 또는 브로드캐스트 주소일 경우에만 데이터 저장
+                            frame_rx_valid <= 1;          // 수신 완료 신호 1클럭 동안 활성화
+                        end
                     end
                 end
                 RX_DONE: begin
-                    // 목적지 주소 확인
-                    if (MAC_ADDRESS == BROADCAST_ADDR || dest_addr == MAC_ADDRESS || dest_addr == BROADCAST_ADDR) begin // assign으로 연결된 wire 사용
-                        rx_frame <= rx_shift_reg_out; // 내 주소 또는 브로드캐스트 주소일 경우에만 데이터 저장
-                        frame_rx_valid <= 1;          // 수신 완료 신호 1클럭 동안 활성화
-                    end
+                    // 안정화 1클럭
                     rx_state <= RX_IDLE; // IDLE 상태로 복귀하여 다음 프레임 대기
                 end
             endcase
