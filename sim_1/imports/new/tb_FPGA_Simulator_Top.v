@@ -93,7 +93,7 @@ module tb_FPGA_Simulator_Top;
         $display("[%0t] Send button pressed. Frame transmission from A to C initiated.", $time);
 
         // 4. 시뮬레이션 진행 및 종료
-        #50; // 스위치를 통해 프레임이 전달되고 LED가 업데이트될 충분한 시간
+        #500; // 스위치를 통해 프레임이 전달되고 LED가 업데이트될 충분한 시간
 
         // 최종 결과 확인: Payload는 5, 수신 노드는 C (LED[6]=1)
         // FPGA_LEDS 예상 값: 8'b0100_0101 = 8'h45

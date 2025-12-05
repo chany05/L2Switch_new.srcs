@@ -88,12 +88,12 @@ module TX_Unit #(
         .clk(clk),
         .rst(rst),
         .shift_in(1'b0), // 시프트 인은 0으로 고정
-        .load(tx_load_en),
+        .load(frame_tx_valid),
         .parallel_in(tx_frame),
         .shift_out(tx_shift_out_bit)
     );
 
-    assign tx_bit = tx_shift_en ? tx_shift_out_bit : 1'b1; // 전송 중이 아닐 때는 하이 임피던스(z) 상태로 전환
+    assign tx_bit = tx_shift_en ? tx_shift_out_bit : 1'bz; // 전송 중이 아닐 때는 하이 임피던스(z) 상태로 전환
 endmodule
 
 //================================================================
