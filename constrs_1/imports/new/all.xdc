@@ -80,7 +80,6 @@ set_property IOSTANDARD LVCMOS33 [get_ports {FPGA_SWITCHES[7]}]
 
 # Discrete LEDs (FPGA_LEDS[7:0]) - Mapped from LED1 (LSB) to LED8 (MSB)
 
-set_property PACKAGE_PIN U5 [get_ports {FPGA_LEDS[0]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {FPGA_LEDS[0]}]
 
 set_property PACKAGE_PIN V1 [get_ports {FPGA_LEDS[1]}]
@@ -101,7 +100,6 @@ set_property IOSTANDARD LVCMOS33 [get_ports {FPGA_LEDS[5]}]
 set_property PACKAGE_PIN W3 [get_ports {FPGA_LEDS[6]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {FPGA_LEDS[6]}]
 
-set_property PACKAGE_PIN Y1 [get_ports {FPGA_LEDS[7]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {FPGA_LEDS[7]}]
 
 set_property PACKAGE_PIN Y1 [get_ports {FPGA_LEDS[7]}]
@@ -111,3 +109,7 @@ set_property PACKAGE_PIN V7 [get_ports FPGA_SEND_BTN]
 set_property PACKAGE_PIN AB9 [get_ports {KEYPAD_ROW[1]}]
 set_property PACKAGE_PIN AB10 [get_ports {KEYPAD_ROW[3]}]
 set_property PACKAGE_PIN Y8 [get_ports {KEYPAD_COL[2]}]
+
+set_property PACKAGE_PIN AB6 [get_ports FPGA_ADD_PACKET_BTN]
+set_property IOSTANDARD LVCMOS33 [get_ports FPGA_ADD_PACKET_BTN]
+set_property DRIVE 12 [get_ports lcd_enb]
