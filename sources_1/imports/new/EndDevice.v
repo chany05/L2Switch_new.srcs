@@ -45,7 +45,6 @@ module TX_Unit #(
     output tx_busy              // 전송 중 표시
 );
     wire tx_shift_out_bit;
-    reg tx_load_en;  // 프레임 로드 신호
     reg tx_shift_en; // 시프트 동작 제어 신호
     reg [$clog2(DEPTH):0] tx_shift_cnt; // 카운터 크기 1 증가
 
@@ -56,17 +55,14 @@ module TX_Unit #(
     always @(posedge clk or posedge rst) begin
         if(rst) begin
             tx_state <= TX_IDLE;
-            tx_load_en <= 0;
             tx_shift_en <= 0;
             tx_shift_cnt <= 0;
         end else begin
-            tx_load_en <= 0;
 
             case(tx_state)
                 TX_IDLE: begin
                     if(frame_tx_valid) begin
                         tx_state <= TX_SHIFT;
-                        tx_load_en <= 1; // 한 클럭 동안만 로드 신호 활성화
                         tx_shift_en <= 1; // 시프트 시작
                         tx_shift_cnt <= DEPTH; // 카운터를 DEPTH로 초기화
                     end

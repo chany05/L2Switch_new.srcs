@@ -244,8 +244,21 @@ module FPGA_Simulator_Top (
     // Text LCD 인스턴스화
     // ---------------------------------------------------------------------
     wire [7:0] addr_in;
-    // 임시: addr_in이 사용되지 않거나 다른 로직에 의해 구동되어야 한다면 0으로 고정
-    assign addr_in = 8'b0; 
+    // received_frame을 활용하여 LCD에 표시 (ASSIGN-6 경고 해결)
+    // 가장 최근 수신된 프레임의 소스/목적지 주소 표시
+    reg [7:0] last_received_addr;
+    always @(posedge FPGA_CLK or posedge sys_rst) begin
+        if (sys_rst) begin
+            last_received_addr <= 8'b0;
+        end else begin
+            // 수신된 프레임 중 하나가 있으면 해당 주소 저장
+            if (frame_rx_trigger[0]) last_received_addr <= received_frame[0][11:4]; // DST[7:4], SRC[3:0]
+            else if (frame_rx_trigger[1]) last_received_addr <= received_frame[1][11:4];
+            else if (frame_rx_trigger[2]) last_received_addr <= received_frame[2][11:4];
+            else if (frame_rx_trigger[3]) last_received_addr <= received_frame[3][11:4];
+        end
+    end
+    assign addr_in = last_received_addr; 
 
     text_lcd lcd_inst (
         .clk(FPGA_CLK),

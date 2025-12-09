@@ -1,6 +1,18 @@
 # System Clock and Reset
+
 set_property PACKAGE_PIN B6 [get_ports FPGA_CLK]
 set_property IOSTANDARD LVCMOS33 [get_ports FPGA_CLK]
+
+# Clock Definition (100MHz assumed - adjust period as needed for your board)
+create_clock -period 10.000 -name sys_clk [get_ports FPGA_CLK]
+
+# Input Delay Constraints (relative to sys_clk)
+# 외부 입력 포트에 대한 타이밍 제약
+set_input_delay -clock sys_clk 0 [get_ports FPGA_RST_BTN]
+set_input_delay -clock sys_clk 0 [get_ports FPGA_SEND_BTN]
+set_input_delay -clock sys_clk 0 [get_ports FPGA_ADD_PACKET_BTN]
+set_input_delay -clock sys_clk 0 [get_ports {FPGA_SWITCHES[*]}]
+set_input_delay -clock sys_clk 0 [get_ports {KEYPAD_COL[*]}]
 
 set_property PACKAGE_PIN Y6 [get_ports FPGA_RST_BTN]
 set_property IOSTANDARD LVCMOS33 [get_ports FPGA_RST_BTN]
