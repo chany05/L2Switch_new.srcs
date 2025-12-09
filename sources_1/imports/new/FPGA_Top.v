@@ -150,7 +150,7 @@ module FPGA_Simulator_Top (
                     default: next_src_idx = 2'd0;
                 endcase
                 
-                // 빈 슬롯 찾아서 채우기
+                // 빈 슬롯 찾아서 채우기 (하나만)
                 found_empty = 0;
                 for (i = 0; i < 4; i = i + 1) begin
                     if (!pending_valid[i] && !found_empty) begin
@@ -243,13 +243,10 @@ module FPGA_Simulator_Top (
     // ---------------------------------------------------------------------
     // Text LCD 인스턴스화
     // ---------------------------------------------------------------------
-    /*
     wire [7:0] addr_in;
-    case (frame_rx_trigger)
-        2'h01: assign addr_in = {MAC_A,};
-        default: assign addr_in = 8'b0;
-    endcase
-    */
+    // 임시: addr_in이 사용되지 않거나 다른 로직에 의해 구동되어야 한다면 0으로 고정
+    assign addr_in = 8'b0; 
+
     text_lcd lcd_inst (
         .clk(FPGA_CLK),
         .rst(sys_rst),
