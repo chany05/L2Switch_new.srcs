@@ -81,84 +81,83 @@ module FPGA_Simulator_Top (
     reg        pending_valid [0:3];   // 유효 플래그
     integer i;
 
-    // 버튼 디바운싱 (1클럭 펄스 생성)
+    // =====================================================================
+    // [통합] 패킷 큐 관리 및 전송 제어 (Multiple Driver 해결됨)
+    // =====================================================================
+    
+    // 버튼 디바운싱 레지스터
     reg send_btn_d1;
     reg add_pkt_btn_d1;
-    wire send_trigger    = FPGA_SEND_BTN    && !send_btn_d1;
+    
+    wire send_trigger       = FPGA_SEND_BTN       && !send_btn_d1;
     wire add_packet_trigger = FPGA_ADD_PACKET_BTN && !add_pkt_btn_d1;
 
-    always @(posedge FPGA_CLK or posedge sys_rst) begin
-        if (sys_rst) begin
-            send_btn_d1    <= 0;
-            add_pkt_btn_d1 <= 0;
-            for (i = 0; i < 4; i = i + 1) begin
-                pending_valid[i] <= 0;
-            end
-        end else begin
-            send_btn_d1    <= FPGA_SEND_BTN;
-            add_pkt_btn_d1 <= FPGA_ADD_PACKET_BTN;
-        end
-    end
+    // 내부 로직용 임시 변수
+    reg found_empty; 
+    reg [1:0] next_src_idx;
 
-    // ---------------------------------------------------------------------
-    // 프레임 큐에 패킷 추가 로직 (add_packet_trigger)
-    // ---------------------------------------------------------------------
-    reg flag;
-    reg [1:0] src_idx;
-    always @(posedge FPGA_CLK or posedge sys_rst) begin
-        if (sys_rst) begin
-            // already cleared in reset above
-            flag <= 0;
-        end else if (add_packet_trigger) begin
-            // 현재 선택된 src 노드 인덱스 매핑
-            flag = 1;
-            case (src_node_select)
-                MAC_A: src_idx = 2'd0;
-                MAC_B: src_idx = 2'd1;
-                MAC_C: src_idx = 2'd2;
-                MAC_D: src_idx = 2'd3;
-                default: src_idx = 2'd0;
-            endcase
-            // 빈 슬롯 찾기
-            for (i = 0; i < 4; i = i + 1) begin
-                if ((!pending_valid[i]) && flag) begin
-                    pending_frames[i] <= {SFD, dest_addr_from_sw, src_node_select, payload};
-                    pending_src[i]   <= src_idx;
-                    pending_valid[i] <= 1'b1;
-                    flag = 0; // break loop
-                end
-            end
-            flag = 0;
-        end
-    end
-
-    // --- 내부 통신 신호 ---
+    // 송신용 신호 초기화
     reg [15:0] frame_to_send [0:NUM_PORTS-1];
     reg        frame_tx_valid [0:NUM_PORTS-1];
 
-    // --- 전송 제어 로직 ---
-    // 전송 버튼이 눌리면, DIP 스위치로 선택된 노드에 전송 신호를 보냄
     always @(posedge FPGA_CLK or posedge sys_rst) begin
         if (sys_rst) begin
-            for (i = 0; i < NUM_PORTS; i = i + 1) begin
+            // 1. 리셋 로직
+            send_btn_d1    <= 0;
+            add_pkt_btn_d1 <= 0;
+            for (i = 0; i < 4; i = i + 1) begin
+                pending_valid[i]  <= 0;
+                pending_frames[i] <= 0;
+                pending_src[i]    <= 0;
+                // Tx 신호 초기화
                 frame_tx_valid[i] <= 0;
                 frame_to_send[i]  <= 0;
             end
         end else begin
-            // 기본적으로 1클럭 뒤에 자동 0 (non‑blocking)
+            // 2. 버튼 상태 업데이트
+            send_btn_d1    <= FPGA_SEND_BTN;
+            add_pkt_btn_d1 <= FPGA_ADD_PACKET_BTN;
+
+            // 3. Tx Valid 신호는 1클럭 펄스이므로 매번 0으로 초기화
             for (i = 0; i < NUM_PORTS; i = i + 1) begin
                 frame_tx_valid[i] <= 0;
             end
+
+            // 4. 전송 로직 (Send Trigger)
             if (send_trigger) begin
                 for (i = 0; i < 4; i = i + 1) begin
                     if (pending_valid[i]) begin
+                        // 해당 포트로 패킷 전송
                         case (pending_src[i])
                             2'd0: begin frame_to_send[0] <= pending_frames[i]; frame_tx_valid[0] <= 1'b1; end
                             2'd1: begin frame_to_send[1] <= pending_frames[i]; frame_tx_valid[1] <= 1'b1; end
                             2'd2: begin frame_to_send[2] <= pending_frames[i]; frame_tx_valid[2] <= 1'b1; end
                             2'd3: begin frame_to_send[3] <= pending_frames[i]; frame_tx_valid[3] <= 1'b1; end
                         endcase
-                        pending_valid[i] <= 0; // 전송 후 슬롯 비우기
+                        // 전송했으므로 대기열에서 제거
+                        pending_valid[i] <= 0; 
+                    end
+                end
+            end 
+            // 5. 패킷 추가 로직 (Add Packet Trigger) - 전송과 동시에 일어나지 않도록 else if 사용
+            else if (add_packet_trigger) begin
+                // 소스 인덱스 매핑
+                case (src_node_select)
+                    MAC_A: next_src_idx = 2'd0;
+                    MAC_B: next_src_idx = 2'd1;
+                    MAC_C: next_src_idx = 2'd2;
+                    MAC_D: next_src_idx = 2'd3;
+                    default: next_src_idx = 2'd0;
+                endcase
+                
+                // 빈 슬롯 찾아서 채우기
+                found_empty = 0;
+                for (i = 0; i < 4; i = i + 1) begin
+                    if (!pending_valid[i] && !found_empty) begin
+                        pending_frames[i] <= {SFD, dest_addr_from_sw, src_node_select, payload};
+                        pending_src[i]    <= next_src_idx;
+                        pending_valid[i]  <= 1'b1;
+                        found_empty = 1; // 하나만 추가하고 종료
                     end
                 end
             end

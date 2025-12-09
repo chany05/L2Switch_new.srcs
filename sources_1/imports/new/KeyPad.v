@@ -78,7 +78,8 @@ module keypad(
     end
 
     // FSM for storing the last pressed key (디바운싱을 간단히 처리하기 위해)
-    always @(*) begin
+    // 순차 논리로 변경하여 래치 방지
+    always @(posedge clk or posedge rst) begin
         if (rst) begin
             state <= IDLE;
             key_value <= 4'hF; // 초기 출력값
