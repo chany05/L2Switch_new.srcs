@@ -144,33 +144,33 @@ always @ (posedge clk or posedge rst) begin
                 lcd_data = 8'b0000_0110;
             end
             line1: begin 
-                lcd_rs <= 1'b1; // 데이터 전송 (RS=1)
+                lcd_rw = 1'b0; // 데이터 전송 (RS=1)
                 case (counter) // 12개의 문자/공백을 출력
                     0: begin lcd_rs <= 1'b0; lcd_data <= 8'b1000_0000; end // 1번째 라인 시작 주소 (0x00)
-                    1: lcd_data <= 8'h73; // s
-                    2: lcd_data <= 8'h72; // r                        
-                    3: lcd_data <= 8'h63; // c
-                    4: lcd_data <= 8'h3A; // :
+                    1: begin lcd_rs <= 1'b1; lcd_data <= 8'h73;end // s
+                    2: begin lcd_rs <= 1'b1; lcd_data <= 8'h72;end // r                        
+                    3: begin lcd_rs <= 1'b1; lcd_data <= 8'h63;end // c
+                    4: begin lcd_rs <= 1'b1; lcd_data <= 8'h3A;end // :
                     5: case(src_addr) // src 주소 표시
-                                4'hA: lcd_data <= ASCII_A;
-                                4'hB: lcd_data <= ASCII_B;
-                                4'hC: lcd_data <= ASCII_C;
-                                4'hD: lcd_data <= ASCII_D;
-                                default: lcd_data <= 8'h3F; // '?'
+                                4'hA: begin lcd_rs <= 1'b1; lcd_data <= ASCII_A;end
+                                4'hB: begin lcd_rs <= 1'b1; lcd_data <= ASCII_B;end
+                                4'hC: begin lcd_rs <= 1'b1; lcd_data <= ASCII_C;end
+                                4'hD: begin lcd_rs <= 1'b1; lcd_data <= ASCII_D;end
+                                default: begin lcd_rs <= 1'b1; lcd_data <= 8'h3F;end // '?'
                            endcase
-                    6: lcd_data <= 8'h20; // [공백]
-                    7: lcd_data <= 8'h64; // d
-                    8: lcd_data <= 8'h73; // s
-                    9: lcd_data <= 8'h74; // t                        
-                    10: lcd_data <= 8'h3A; // :
+                    6: begin lcd_rs <= 1'b1; lcd_data <= 8'h20;end // [공백]
+                    7: begin lcd_rs <= 1'b1; lcd_data <= 8'h64;end // d
+                    8: begin lcd_rs <= 1'b1; lcd_data <= 8'h73;end // s
+                    9: begin lcd_rs <= 1'b1; lcd_data <= 8'h74;end // t                        
+                    10: begin lcd_rs <= 1'b1; lcd_data <= 8'h3A;end // :
                     11: case(dest_addr) // dst 주소 표시
-                                 4'hA: lcd_data <= ASCII_A;
-                                 4'hB: lcd_data <= ASCII_B;
-                                 4'hC: lcd_data <= ASCII_C;
-                                 4'hD: lcd_data <= ASCII_D;
-                                 default: lcd_data <= 8'h3F; // '?'
+                                 4'hA: begin lcd_rs <= 1'b1; lcd_data <= ASCII_A;end
+                                 4'hB: begin lcd_rs <= 1'b1; lcd_data <= ASCII_B;end
+                                 4'hC: begin lcd_rs <= 1'b1; lcd_data <= ASCII_C;end
+                                 4'hD: begin lcd_rs <= 1'b1; lcd_data <= ASCII_D;end
+                                 default: begin lcd_rs <= 1'b1; lcd_data <= 8'h3F;end // '?'
                         endcase
-                    default: lcd_rs <= 1'b0; 
+                    default: begin lcd_rs = 1'b1; lcd_data = 8'b0010_0000; end
                 endcase
             end
                 
@@ -178,29 +178,29 @@ always @ (posedge clk or posedge rst) begin
             // Line 2: 'PAYLOAD:' 출력
             // ===================================================
             line2: begin 
-                lcd_rs <= 1'b1; // 데이터 전송 (RS=1)
+                lcd_rw = 1'b0; // 데이터 전송 (RS=1)
                 case (counter)
-                    0: begin lcd_rs <= 1'b0; lcd_data <= 8'b1100_0000; end // 2번째 라인 시작 주소 (0x40)
-                    1: lcd_data <= 8'h50; // P
-                    2: lcd_data <= 8'h41; // A
-                    3: lcd_data <= 8'h59; // Y
-                    4: lcd_data <= 8'h4C; // L                        
-                    5: lcd_data <= 8'h4F; // O
-                    6: lcd_data <= 8'h41; // A
-                    7: lcd_data <= 8'h44; // D
-                    8: lcd_data <= 8'h3A; // :
+                    0: begin lcd_rs <= 1'b0; lcd_data <= 8'hc0; end // 2번째 라인 시작 주소 (0x40)
+                    1: begin lcd_rs <= 1'b1; lcd_data <= 8'h50; end // P
+                    2: begin lcd_rs <= 1'b1; lcd_data <= 8'h41; end // A
+                    3: begin lcd_rs <= 1'b1; lcd_data <= 8'h59; end // Y
+                    4: begin lcd_rs <= 1'b1; lcd_data <= 8'h4C; end // L                        
+                    5: begin lcd_rs <= 1'b1; lcd_data <= 8'h4F; end // O
+                    6: begin lcd_rs <= 1'b1; lcd_data <= 8'h41; end // A
+                    7: begin lcd_rs <= 1'b1; lcd_data <= 8'h44; end // D
+                    8: begin lcd_rs <= 1'b1; lcd_data <= 8'h3A; end // :
                     9: case(payload) // 페이로드 값 표시
-                                4'h0: lcd_data <= ASCII_0; 4'h1: lcd_data <= ASCII_1;
-                                4'h2: lcd_data <= ASCII_2; 4'h3: lcd_data <= ASCII_3;
-                                4'h4: lcd_data <= ASCII_4; 4'h5: lcd_data <= ASCII_5;
-                                4'h6: lcd_data <= ASCII_6; 4'h7: lcd_data <= ASCII_7;
-                                4'h8: lcd_data <= ASCII_8; 4'h9: lcd_data <= ASCII_9;
-                                default: lcd_data <= 8'h3F; // '?'
+                                4'h0: begin lcd_rs = 1'b1; lcd_data <= ASCII_0;end 4'h1: begin lcd_rs = 1'b1; lcd_data <= ASCII_1;end
+                                4'h2: begin lcd_rs = 1'b1; lcd_data <= ASCII_2;end 4'h3: begin lcd_rs = 1'b1; lcd_data <= ASCII_3;end
+                                4'h4: begin lcd_rs = 1'b1; lcd_data <= ASCII_4;end 4'h5: begin lcd_rs = 1'b1; lcd_data <= ASCII_5;end
+                                4'h6: begin lcd_rs = 1'b1; lcd_data <= ASCII_6;end 4'h7: begin lcd_rs = 1'b1; lcd_data <= ASCII_7;end
+                                4'h8: begin lcd_rs = 1'b1; lcd_data <= ASCII_8;end 4'h9: begin lcd_rs = 1'b1; lcd_data <= ASCII_9;end
+                                default: begin lcd_rs = 1'b1; lcd_data <= 8'h3F;end // '?'
                         endcase
                     // 페이로드는 한 자리이므로 나머지 공간은 공백 처리
-                    10: lcd_data <= 8'h20; // [공백]
-                    11: lcd_data <= 8'h20; // [공백]
-                    default: lcd_rs <= 1'b0; 
+                    10: begin lcd_rs = 1'b1; lcd_data <= 8'h20; end // [공백]
+                    11: begin lcd_rs = 1'b1; lcd_data <= 8'h20; end // [공백]
+                    default: begin lcd_rs = 1'b1; lcd_data = 8'b0010_0000; end 
                 endcase
              end
             delay_t: begin

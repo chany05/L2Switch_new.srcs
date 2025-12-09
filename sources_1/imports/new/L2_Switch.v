@@ -210,6 +210,9 @@ module L2_Switch #(
     reg [$clog2(NUM_PORTS)-1:0] flood_port_idx;  // Flooding 시 현재 처리 중인 포트
     reg [$clog2(NUM_PORTS)-1:0] dest_port_reg;
     reg dest_found_reg;
+    
+    // FSM에서 입력 큐 클리어 요청 (Multiple Driver 방지)
+    reg input_queue_clear_req [0:NUM_PORTS-1];
 
     integer i, j;
 
@@ -245,12 +248,14 @@ module L2_Switch #(
             end
         end else begin
             for (i = 0; i < NUM_PORTS; i = i + 1) begin
-                if (frame_rx_valid[i] && !input_queue_valid[i]) begin
+                // FSM에서 clear 요청이 들어오면 큐 비우기
+                if (input_queue_clear_req[i]) begin
+                    input_queue_valid[i] <= 0;
+                end else if (frame_rx_valid[i] && !input_queue_valid[i]) begin
                     // 프레임 수신 시 입력 큐에 저장
                     input_queue[i] <= rx_frame[i];
                     input_queue_valid[i] <= 1;
                 end
-                // 큐가 처리되면 valid 플래그 해제 (아래 FSM에서 처리)
             end
         end
     end
@@ -309,11 +314,13 @@ module L2_Switch #(
             for (i = 0; i < NUM_PORTS; i = i + 1) begin
                 fifo_wr_en[i] <= 0;
                 fifo_wr_data[i] <= 0;
+                input_queue_clear_req[i] <= 0;
             end
         end else begin
-            // 기본적으로 FIFO 쓰기 비활성화
+            // 기본적으로 FIFO 쓰기 비활성화 및 clear 요청 초기화
             for (i = 0; i < NUM_PORTS; i = i + 1) begin
                 fifo_wr_en[i] <= 0;
+                input_queue_clear_req[i] <= 0;
             end
             
             case (fwd_state)
@@ -360,8 +367,8 @@ module L2_Switch #(
                             fifo_wr_data[dest_port_reg] <= current_frame;
                         end
                         // Filtering: 목적지가 소스와 같으면 아무것도 안 함
-                        // 포워딩 완료, 입력 큐 비우고 다음 포트로
-                        input_queue_valid[current_src_port] <= 0;
+                        // 포워딩 완료, 입력 큐 클리어 요청 후 다음 포트로
+                        input_queue_clear_req[current_src_port] <= 1;
                         rr_current_port <= (rr_current_port + 1) % NUM_PORTS;
                         fwd_state <= S_IDLE;
                     end else begin
@@ -379,8 +386,8 @@ module L2_Switch #(
                     end
                     
                     if (flood_port_idx == NUM_PORTS - 1) begin
-                        // Flooding 완료, 입력 큐 비우고 다음 포트로
-                        input_queue_valid[current_src_port] <= 0;
+                        // Flooding 완료, 입력 큐 클리어 요청 후 다음 포트로
+                        input_queue_clear_req[current_src_port] <= 1;
                         rr_current_port <= (rr_current_port + 1) % NUM_PORTS;
                         fwd_state <= S_IDLE;
                     end else begin

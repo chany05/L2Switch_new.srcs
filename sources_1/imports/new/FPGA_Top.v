@@ -244,11 +244,18 @@ module FPGA_Simulator_Top (
     // ---------------------------------------------------------------------
     // Text LCD 인스턴스화
     // ---------------------------------------------------------------------
+    /*
+    wire [7:0] addr_in;
+    case (frame_rx_trigger)
+        2'h01: assign addr_in = {MAC_A,};
+        default: assign addr_in = 8'b0;
+    endcase
+    */
     text_lcd lcd_inst (
         .clk(FPGA_CLK),
         .rst(sys_rst),
         .payload_in(FPGA_LEDS),
-        .addr_in({dest_addr_from_sw, src_node_select}),
+        .addr_in(addr_in),
         .lcd_enb(lcd_enb),
         .lcd_rs(lcd_rs),
         .lcd_rw(lcd_rw),

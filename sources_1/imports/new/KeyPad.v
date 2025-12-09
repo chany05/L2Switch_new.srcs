@@ -95,6 +95,10 @@ module keypad(
                         state <= IDLE; // 키가 떼어지면 다시 IDLE 상태로
                     end
                 end
+                default: begin
+                    state <= IDLE;
+                    key_value <= 4'hF;
+                end
             endcase
         end
     end
